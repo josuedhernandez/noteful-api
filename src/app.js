@@ -3,20 +3,17 @@ const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 const helmet = require("helmet");
-const articlesRouter = require("./articles/articles-router");
+const foldersRouter = require("./folders/folders-router");
 const app = express();
 const { NODE_ENV } = require("./config");
 const morganOption = NODE_ENV === "production";
-const usersRouter = require("./users/users-router");
-const commentsRouter = require("./comments/comments-router");
+const notesRouter = require("./notes/notes-router");
 
 app.use(morgan(morganOption));
 app.use(helmet());
 
-app.use("/api/articles", articlesRouter);
-app.use("/api/users", usersRouter);
-app.use("/api/comments", commentsRouter);
-// app.use(articlesRouter)
+app.use("/api/folders", foldersRouter);
+app.use("/api/notes", notesRouter);
 
 app.use(cors());
 
