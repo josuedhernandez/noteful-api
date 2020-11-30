@@ -6,12 +6,14 @@ const NotesService = require('./notes-service')
 const notesRouter = express.Router()
 const jsonParser = express.json()
 
+// Changing serialized response to match react client
+// TODO: Refactor database keys to match API and response needed by client.
 const serializeNote = note => ({
-  id: note.id,
-  note_name: xss(note.note_name),
+  id: note.id.toString(),
+  name: xss(note.note_name),
+  modified: note.date_modified,
+  folderId: note.folder_id,
   content: xss(note.content),
-  date_modified: note.date_modified,
-  folder_id: note.folder_id,
 })
 
 notesRouter
