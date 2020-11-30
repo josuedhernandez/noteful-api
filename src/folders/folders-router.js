@@ -8,7 +8,7 @@ const jsonParser = express.json();
 
 const serializeFolder = (folder) => ({
   id: folder.id,
-  folder_name: folder.folder_name,
+  folder_name: xss(folder.folder_name),
 });
 
 foldersRouter
@@ -20,29 +20,28 @@ foldersRouter
         res.json(folders.map(serializeFolder));
       })
       .catch(next);
-  });
-  // .post(jsonParser, (req, res, next) => {
-  //   const { title, content, style, author } = req.body
-  //   const newfolder = { title, content, style };
+  })
+  .post(jsonParser, (req, res, next) => {
+    const { folder_name } = req.body
+    const newfolder = { folder_name };
 
-  //   for (const [key, value] of Object.entries(newfolder)) {
-  //     if (value == null) {
-  //       return res.status(400).json({
-  //         error: { message: `Missing '${key}' in request body` },
-  //       });
-  //     }
-  //   }
-    
-  //   newfolder.author = author
-  //   FoldersService.insertfolder(req.app.get("db"), newfolder)
-  //     .then((folder) => {
-  //       res
-  //         .status(201)
-  //         .location(path.posix.join(req.originalUrl, `/${folder.id}`))
-  //         .json(serializeFolder(folder));
-  //     })
-  //     .catch(next);
-  // });
+    for (const [key, value] of Object.entries(newfolder)) {
+      if (value == null) {
+        return res.status(400).json({
+          error: { message: `Missing '${key}' in request body` },
+        });
+      }
+    }
+
+    FoldersService.insertFolder(req.app.get("db"), newfolder)
+      .then((folder) => {
+        res
+          .status(201)
+          .location(path.posix.join(req.originalUrl, `/${folder.id}`))
+          .json(serializeFolder(folder));
+      })
+      .catch(next);
+  });
 
 foldersRouter
   .route("/:folder_id")
@@ -59,41 +58,39 @@ foldersRouter
       })
       .catch(next);
   })
-  // Why not using next here but we are using it in .delete
-  // Is .all always running?
   .get((req, res, next) => {
     res.json(serializeFolder(res.folder));
+  })
+  .delete((req, res, next) => {
+    FoldersService.deleteFolder(req.app.get("db"), req.params.folder_id)
+      .then(() => {
+        res.status(204).end();
+      })
+      .catch(next);
+  })
+  .patch(jsonParser, (req, res, next) => {
+    const { folder_name } = req.body;
+    const folderToUpdate = { folder_name };
+
+    const numberOfValues = Object.values(folderToUpdate).filter(Boolean)
+      .length;
+    if (numberOfValues === 0) {
+      return res.status(400).json({
+        error: {
+          message: `Request body must contain either 'folder_name'`,
+        },
+      });
+    }
+
+    FoldersService.updateFolder(
+      req.app.get("db"),
+      req.params.folder_id,
+      folderToUpdate
+    )
+      .then((numRowsAffected) => {
+        res.status(204).end();
+      })
+      .catch(next);
   });
-  // .delete((req, res, next) => {
-  //   FoldersService.deletefolder(req.app.get("db"), req.params.folder_id)
-  //     .then(() => {
-  //       res.status(204).end();
-  //     })
-  //     .catch(next);
-  // })
-  // .patch(jsonParser, (req, res, next) => {
-  //   const { title, content, style } = req.body;
-  //   const folderToUpdate = { title, content, style };
-
-  //   const numberOfValues = Object.values(folderToUpdate).filter(Boolean)
-  //     .length;
-  //   if (numberOfValues === 0) {
-  //     return res.status(400).json({
-  //       error: {
-  //         message: `Request body must contain either 'title', 'style' or 'content'`,
-  //       },
-  //     });
-  //   }
-
-  //   FoldersService.updatefolder(
-  //     req.app.get("db"),
-  //     req.params.folder_id,
-  //     folderToUpdate
-  //   )
-  //     .then((numRowsAffected) => {
-  //       res.status(204).end();
-  //     })
-  //     .catch(next);
-  // });
 
 module.exports = foldersRouter;
